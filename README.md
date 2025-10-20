@@ -211,8 +211,8 @@ Directional Light
 EventSystem
 ```
 
-[1]: https://developers.meta.com/horizon/documentation/unity/unity-isdk-interaction-sdk-overview/ "Meta for Developers"
-[2]: https://developers.meta.com/horizon/documentation/unity/unity-isdk-create-teleport-hotspot
-[3]: https://developers.meta.com/horizon/documentation/unity/unity-isdk-create-teleport-physics-layer
-[4]: https://developers.meta.com/horizon/documentation/unity/unity-isdk-create-teleport-navmesh
-[5]: https://developers.meta.com/horizon/documentation/unity/unity-isdk-create-teleport-plane
+https://developers.meta.com/horizon/documentation/unity/unity-isdk-interaction-sdk-overview/ "Meta for Developers"
+https://developers.meta.com/horizon/documentation/unity/unity-isdk-create-teleport-hotspot
+https://developers.meta.com/horizon/documentation/unity/unity-isdk-create-teleport-physics-layer
+https://developers.meta.com/horizon/documentation/unity/unity-isdk-create-teleport-navmesh
+[https://developers.meta.com/horizon/documentation/unity/unity-isdk-create-teleport-plane
