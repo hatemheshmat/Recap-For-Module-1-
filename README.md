@@ -289,3 +289,435 @@ https://developers.meta.com/horizon/documentation/unity/unity-isdk-create-telepo
 https://developers.meta.com/horizon/documentation/unity/unity-isdk-create-teleport-physics-layer
 https://developers.meta.com/horizon/documentation/unity/unity-isdk-create-teleport-navmesh
 [https://developers.meta.com/horizon/documentation/unity/unity-isdk-create-teleport-plane
+
+
+# **Lab-Guide — Grabbing + Ray Interaction (Meta XR AIO v65+ • Unity 6.x • URP)**
+
+**Stack:** Meta XR **only** (no OpenXR), **no custom scripts**, **Interaction SDK** prefabs/wizards/components
+
+---
+---
+
+## 🔹  Grabbing (Meta Interaction SDK “Building Blocks”)**
+
+Everything below uses **prefabs/wizards/components only** — no scripts.
+
+### ✅ **To-Do Checklist (with why)**
+
+### 1) **Add the ready camera rig & interactions (one click)**
+
+* ⬜ **Oculus/Meta → Tools → Building Blocks → Grab Interaction**
+  *(or: **Assets/Samples/Meta XR…/Interaction SDK/Prefabs →** Camera Rig / Interactions)*
+
+  * • Creates **OVRCameraRig + OVRManager**, **TrackingSpace**, **Hand Interactions (L/R)**, **Controller Interactions (L/R)**.
+  * • Hands & controllers include the **correct Interactors** wired for grab.
+  * *(You can delete any demo cube they add — it’s just for quick testing.)*
+
+---
+
+### 2) **Create your own Grabbable (from scratch)**
+
+* ⬜ **GameObject → 3D Object → Cube** → **Reset** → **Scale = (0.1, 0.1, 0.1)** → lift slightly above floor
+
+  * • Tiny = easy to test, won’t clip the ground.
+* ⬜ **Add Component → Rigidbody**
+
+  * **Use Gravity = OFF** *(common for props that shouldn’t drop before first grab)*
+  * **Is Kinematic = ON** *(stable while held; release behavior is configurable)*
+* ⬜ **Right-click the cube → Interaction SDK → Add Grab Interaction** *(Wizard)*
+
+  * Choose **Interactors**: **Hands**, **Controllers**, or **Both**
+  * Choose **Grab Types**: **Pinch**, **Palm**, or **Both**
+  * Let the wizard **Generate Collider** / **Fix Rigidbody** if needed
+  * **Create**
+  * **Wizard adds (and links):**
+
+    * **Grabbable** (core selection/ownership state)
+    * **Hand Grab Interactable** (for **hands**)
+    * **Grab Interactable** (for **controllers**)
+
+**Why two interactables?**
+
+* **Hand Grab Interactable** → hand poses, poke/touch affordances.
+* **Grab Interactable** → controller inputs (grip/trigger), ray distance logic.
+* Having **both** = grab with **either** hands or controllers.
+
+---
+
+### 3) **One-hand grab (baseline)**
+
+* ⬜ On the object’s **Grabbable** → **Add Component → Grab Free Transformer**
+* ⬜ **Grabbable → Optionals → One Grab Transformer = Grab Free Transformer**
+* ⬜ *(Optional)* **Uncheck “Transfer On Second Selection”**
+
+  * • Prevents auto-handoff if the other hand touches it.
+
+**Concept:** **Transformer** decides how the object **moves/rotates/scales** while selected.
+
+---
+
+### 4) **Two-hand grab**
+
+* ⬜ Keep **Grab Free Transformer** on the object
+* ⬜ **Grabbable → Optionals → Two Grab Transformer = Grab Free Transformer**
+* ⬜ **Uncheck “Transfer On Second Selection”**
+
+  * • Requires both hands to stay on it (nice for “heavy” props).
+
+---
+
+### 5) **One-hand grab + two-hand scaling**
+
+* ⬜ **Grab Free Transformer** in **both** fields (One & Two Grab Transformer)
+* ⬜ In the transformer:
+
+  * **Min Scale / Max Scale** *(e.g., 1.0 → 2.2)*
+  * **Constraints Are Relative = ON**
+  * • “Relative” keeps scaling intuitive when your model isn’t at scale 1.
+
+---
+
+### 6) **Constrain to a plane (slide on a surface)**
+
+* ⬜ **Grab Free Transformer**:
+
+  * **Lock Rotation (X/Y/Z)** as needed
+  * **Allow Position** only on axes you want (e.g., **X & Z**)
+  * **Constraints Are Relative = ON**
+  * • Great for sliders/table-top items; won’t drift off plane.
+
+---
+
+### 7) **Constrain to an axis (door hinge)**
+
+* ⬜ **Create parent** *Door* GO; make mesh a **child**
+* ⬜ **Create child** *Hinge* at **exact pivot** (use **V** vertex-snap)
+* ⬜ **Add Component → One Grab Rotate Transformer** *(on interactable)*
+* ⬜ **Grabbable → Optionals → One Grab Transformer = One Grab Rotate Transformer**
+* ⬜ **Axis = Up** *(typical for a vertical hinge)*
+  **Pivot = Hinge**, **Min/Max Angle** *(e.g., −90° → +90°)*
+
+  * • Locks rotation to your hinge for realistic doors/lids.
+
+---
+
+### 8) **Distance grab (three styles)**
+
+* ⬜ **Interaction SDK → Add Distance Grab Interaction** *(Wizard)*
+
+  * **Hands**, **Controllers**, or **Both**
+  * **Mode**:
+
+    * **Hand-relative** (follows with offset)
+    * **Pull to hand** (snaps to grip)
+    * **Manipulate in place** (stays put; local move near hit point)
+  * *(Optional)* **Timeout Snap Zone** (auto-return after release)
+  * **Create**
+  * • Wizard adds **Distance Hand/Controller Interactors** and the **ISDK Distance…** component on your object if missing.
+
+---
+
+### 9) **Touch grab (surface touch → grab)**
+
+* ⬜ **Project search:** `OVR Touch Hand Grab Interactor` *(prefab)*
+* ⬜ Drop one under each **Hand Interactions (L/R)** in your rig
+* ⬜ On your **object**:
+
+  * **Rigidbody** *(Kinematic / no gravity recommended while held)*
+  * **Grabbable** *(link Rigidbody; usually keep **Transfer On Second Selection = ON** for natural pass)*
+  * **Touch Hand Grab Interactable**
+  * **Create child GO → “Bounds”** → copy your collider(s) here → **Is Trigger = ON**
+  * In **Touch Hand Grab Interactable**:
+
+    * **Pointable Element = Grabbable**
+    * Add the **Bounds** triggers to its **Colliders** list
+  * • Touch-based grabbing is perfect for knobs, sliders, small props.
+
+---
+
+### 10) **Hand poses (realism)**
+
+* ⬜ Record **Grab Poses** per object/hand if fingers clip or look awkward
+
+  * • Makes contact look natural (no fingers through mesh).
+
+---
+
+## 🛠️ **Ray Interaction (3D objects + World-Space UI)**
+
+> **Interactor** = on hand/controller (source)
+> **Interactable** = on object/UI (target)
+
+### A) **Controller Ray Interactors**
+
+* ⬜ **Project search → Controller Ray Interactor**
+* ⬜ Add to both:
+
+  * `OVRCameraRig/TrackingSpace/LeftHandAnchor/ControllerInteractors`
+  * `OVRCameraRig/TrackingSpace/RightHandAnchor/ControllerInteractors`
+* ⬜ If your rig uses **Best Hover / Interactor Group**, add each Ray Interactor there.
+* ⬜ **Visual polish on each ray**
+
+  * **Max Ray Length ≈ 6–8m**
+  * **Hide When No Interactable = ON** *(cleaner UX)*
+
+---
+
+### B) **Ray-grabbable 3D object**
+
+* ⬜ **Create** Cube `RayObject` → **Scale = 0.1** → lift to y ~ 0.5
+* ⬜ **Right-click → Interaction SDK → Add Ray Grab Interaction** *(Wizard)*
+
+  * **Fix All** to add **Rigidbody** (often **Use Gravity OFF**, **Kinematic ON**)
+  * **Create** → adds an **ISDK Ray Grab** host with:
+
+    * **Ray Interactable**
+    * Default **Movement Provider** = **Move From Target Provider**
+* ⬜ *(Optionally change movement)*:
+
+  * Remove **Move From Target Provider**
+  * **Add Component → Move Towards Target Provider**
+  * On **Ray Interactable → Optionals → Movement Provider = Move Towards Target Provider**
+
+**Movement Provider tip:**
+
+* **Move From Target** → keeps offset at the hit point (feels like “drag from hit”).
+* **Move Towards Target** → object travels to controller (nice for “bring to hand”).
+* *(Other providers exist in the package for specialized feels.)*
+
+---
+
+### C) **Ray-interactable World-Space UI**
+
+* ⬜ **GameObject → UI → Canvas** → rename `UI_Canvas`
+
+  * **Render Mode = World Space**
+  * **Scale = (0.001, 0.001, 0.001)**
+  * **Position ≈ (0, 1.5, 1.6)**, **Size (W=100, H=50)** (adjust to taste)
+* ⬜ Add a **Panel** and a **Button (TextMeshPro)** (e.g., “Press”)
+* ⬜ **Right-click `UI_Canvas` → Interaction SDK → Add Ray Interaction to Canvas**
+
+  * Wizard will warn **“No Pointable Canvas Module”** → click **Fix**
+
+    * EventSystem gets the correct XR UI module
+  * Click **Create** (adds the helper under canvas)
+* ⬜ *(Optional)* Put canvas on **UI** layer and include **UI** in Ray Interactor masks.
+
+---
+
+### D) **Mask rays to different targets (Tag Set Filter)**
+
+*(Example: Left ray = 3D only, Right ray = UI only)*
+
+* ⬜ **On Left Controller Ray Interactor**:
+
+  * **Add Component → Tag Set Filter**
+  * **Required Tag =** `3DObject` • **Exclude Tag =** `UICanvas`
+* ⬜ **On Right Controller Ray Interactor**:
+
+  * **Add Component → Tag Set Filter**
+  * **Required Tag =** `UICanvas` • **Exclude Tag =** `3DObject`
+* ⬜ **On the 3D object’s ISDK Ray child**:
+
+  * **Add Component → Tag Set** → **Tag =** `3DObject`
+* ⬜ **On the UI Canvas’s ISDK Ray child**:
+
+  * **Add Component → Tag Set** → **Tag =** `UICanvas`
+* ⬜ **IMPORTANT:** On each **Ray Interactor → Optionals → Interactable Filters (+)**
+  Drag its **own Tag Set Filter** into this list.
+
+  * • Without this reference, the filter won’t apply.
+
+---
+
+## 🎮 **Playtest (quick paths)**
+
+**Grabbing**
+
+* Press **Play** (Quest via Link/Air Link).
+* Reach and **grab** your cube with **hand** or **controller**; release/rehab; try **two-hand scale** if enabled; slide across **plane constraint** objects; rotate **door/hinge**.
+
+**Ray → 3D**
+
+* Aim controller **ray** at the `RayObject`; **select**.
+* **Move From Target** feels like dragging at hit point; **Move Towards Target** flies to you.
+
+**Ray → UI**
+
+* Aim **Right** ray at **UI_Canvas** → click **Button**.
+* **Left** ray should **ignore** UI if masked, and vice-versa.
+
+**Hide When No Interactable**
+
+* Rays should appear **only** when pointed at a valid target.
+
+---
+
+## 🚧 **Troubleshooting (fast fixes)**
+
+**Nothing grabs**
+
+* ⬜ **Grabbable** exists and **Rigidbody** is linked
+* ⬜ At least one of **Hand Grab Interactable / Grab Interactable** is present
+* ⬜ Appropriate **Interactor** exists on the hand/controller
+
+**Object jitter / unstable while held**
+
+* ⬜ Keep **Rigidbody Is Kinematic = ON while held** (default via wizard)
+* ⬜ Avoid heavy physics on small props
+
+**Two-hand scaling not working**
+
+* ⬜ **Grab Free Transformer** is assigned to **both** One & Two Grab Transformer
+* ⬜ **Transfer On Second Selection = OFF**
+
+**Door won’t pivot correctly**
+
+* ⬜ **Hinge pivot** exactly at the desired axis (use **V** snap)
+* ⬜ **One Grab Rotate Transformer**: Axis/Pivot/Angles are set
+
+**Ray doesn’t interact with object**
+
+* ⬜ **Ray Interactable** present on the object
+* ⬜ **ColliderSurface**/**Movement Provider** assigned if your prefab expects them
+* ⬜ Layer mask includes the object’s layer
+
+**Ray doesn’t interact with UI**
+
+* ⬜ **Canvas = World Space**
+* ⬜ EventSystem has **XR/Pointable Canvas** module (wizard “Fix”)
+* ⬜ Canvas not microscopically scaled (≈ **0.001** is good)
+* ⬜ Ray’s mask includes the **UI** layer (if used)
+
+**Ray masking not working**
+
+* ⬜ **Tag Set** on the interactable child matches the exact **Required Tag**
+* ⬜ Ray Interactor → **Interactable Filters** includes the **Tag Set Filter**
+* ⬜ Spelling/case match for tag strings
+
+**Ray always visible**
+
+* ⬜ Enable **Hide When No Interactable** on the ray’s **Line Visual**
+
+---
+
+## 🗂️ **What your Hierarchy should look like (typical)**
+
+```
+OVRCameraRig
+└─ TrackingSpace
+   ├─ LeftHandAnchor
+   │  └─ ControllerInteractors
+   │     ├─ Controller Ray Interactor   (Tag Set Filter: 3D only, optional)
+   │     └─ Grab Interactor
+   └─ RightHandAnchor
+      └─ ControllerInteractors
+         ├─ Controller Ray Interactor   (Tag Set Filter: UI only, optional)
+         └─ Grab Interactor
+Interactions
+└─ Hand Interaction
+   ├─ Left Hand Synthetic   (Touch Hand Grab Interactor, optional)
+   └─ Right Hand Synthetic  (Touch Hand Grab Interactor, optional)
+
+Ground (Collider)
+Large Room (optional)
+Directional Light
+EventSystem (with XR/Pointable Canvas module)
+```
+
+**Objects**
+
+```
+ISDK Hand Grab Interaction (wizard host for your cube)
+├─ Cube (mesh + collider)
+└─ [components on host]  Grabbable + Hand Grab Interactable + Grab Interactable
+                         Grab Free Transformer (assigned in One/Two Grab)
+                         (Distance Grab components if added)
+                         (One Grab Rotate Transformer for door/hinge cases)
+```
+
+**Ray object**
+
+```
+RayObject (Cube)
+└─ ISDK Ray Grab Interaction (wizard host)
+   └─ Ray Interactable + Movement Provider (From Target / Towards Target)
+```
+
+**UI**
+
+```
+UI_Canvas (World Space)
+├─ Panel
+└─ Button (TMP)
+└─ [child helper from wizard] ISDK Ray Interaction (canvas)
+```
+
+---
+
+## ✅ **End-of-Session Validation**
+
+* ⬜ **Hands & controllers** visible; grab works with **either** input (if both added)
+* ⬜ **One-hand** grab moves cleanly; **Two-hand** grab/scaling works (if configured)
+* ⬜ **Plane constraint** object slides only on allowed axes
+* ⬜ **Door/hinge** rotates only around its pivot within Min/Max angles
+* ⬜ **Ray → 3D**: object responds; movement provider behavior matches your choice
+* ⬜ **Ray → UI**: world-space button is clickable
+* ⬜ **Masking**: Left ray hits **3D only**, Right ray hits **UI only** (if set)
+* ⬜ **Hide When No Interactable**: rays appear only over valid targets
+* ⬜ **Perf**: SP-Instanced, URP tuned; smooth 72–90 FPS scene
+
+---
+
+## 📋 **Copy-paste Micro-Checklist**
+
+**Scene**
+
+* [ ] Large Room or Plane ground (with Collider)
+* [ ] Directional Light
+
+**Rig & Managers**
+
+* [ ] OVRCameraRig + OVRManager
+* [ ] Interactions: Hand + Controller blocks (from Building Blocks)
+* [ ] EventSystem (with XR/Pointable Canvas module if using UI)
+
+**Grabbable**
+
+* [ ] Rigidbody (Kinematic, Gravity OFF for props)
+* [ ] Grabbable (Rigidbody linked)
+* [ ] Hand Grab Interactable + Grab Interactable
+* [ ] Grab Free Transformer (One & Two Grab)
+* [ ] (Optional) One Grab Rotate Transformer + Hinge pivot
+
+**Distance/Touch**
+
+* [ ] Distance Grab Interaction (wizard) if needed
+* [ ] Touch Hand Grab Interactor (hands) + Touch Hand Grab Interactable (object)
+* [ ] Bounds triggers for touch
+
+**Rays**
+
+* [ ] Controller Ray Interactor (L/R), MaxLen ~6–8m
+* [ ] Hide When No Interactable = ON
+* [ ] Ray Interactable on 3D targets + Movement Provider
+
+**UI**
+
+* [ ] Canvas = World Space, Scale ≈ 0.001
+* [ ] Button to test
+* [ ] Add Ray Interaction to Canvas (wizard “Fix” done)
+
+**Masking (optional)**
+
+* [ ] Tag Set Filter on each Ray Interactor
+* [ ] Tag Set on each target (3DObject / UICanvas)
+* [ ] Interactable Filters list includes Tag Set Filter
+
+**Perf**
+
+* [ ] Single-Pass Instanced, Foveation Low/Med
+* [ ] URP: HDR OFF, MSAA 4x, Shadows 512/20–25m/2 casc., PostFX OFF
+
+---
+
