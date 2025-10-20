@@ -9,20 +9,93 @@ Add movement to the player rig using Meta’s modern Interaction/Movement stack:
 
 ---
 
-## Pre-flight (quick confirmation)
+### ✅ **To-Do Checklist (with why)**
 
-⬜ **File → Build Settings → Android** (Switch Platform)
+1. **Create the project**
 
-⬜ **Player Settings → Other Settings** → Package Name set, **Min API ≥ 29**, **IL2CPP**, **ARM64** only
+* ⬜ **Unity Hub → New → 3D (URP)**
 
-⬜ **Other Settings → Graphics APIs (Android)**: **Vulkan** (remove GLES3)
+  * • URP is the most stable + performant path on Quest.
 
-⬜ **XR Plug-in Management (Android)** → **Meta XR = ON**, **OpenXR = OFF**
+2. **Switch to Android**
 
-⬜ **XR → Project Validation** → **Fix All** (accept auto-fixes) ([Meta Developers][1])
+* ⬜ **File → Build Settings → Android → Switch Platform**
 
-⬜ **URP Asset**: **HDR Off**, **MSAA 4x**, simple shadows; **Stereo**: **Single-Pass Instanced** (OVRManager / Player Settings)
+  * • Quest is Android; switching now avoids later re-imports.
+* ⬜ **Texture Compression = ASTC**
 
+  * • Best memory/quality tradeoff on Quest.
+
+3. **Player Settings** *(Project Settings → Player → Other Settings)*
+
+* ⬜ **Package Name** `com.company.app`
+
+  * • Required for Android build/installation.
+* ⬜ **Min API Level ≥ 29 (Android 10)**
+
+  * • Matches current Meta requirements.
+* ⬜ **Scripting Backend = IL2CPP**, **ARM64 only**
+
+  * • Required for store + best perf.
+* ⬜ **Graphics API = Vulkan** *(uncheck GLES3 unless you have a reason)*
+
+  * • Usually faster on Quest with modern SDKs.
+
+4. **Install Meta XR packages (no OpenXR)**
+
+* ⬜ **Window → Package Manager → Unity Registry**
+
+  * ✅ **XR Plug-in Management**
+  * ✅ **Meta XR (a.k.a. Oculus) plugin provider**
+  * ✅ **Meta XR All-in-One SDK** (**v65+**)
+* ⬜ **Project Settings → XR Plug-in Management → Android**
+
+  * ✅ **Enable Meta XR**
+  * ❌ **Do NOT enable OpenXR** (we’re Meta-only here)
+  * • Keeps the stack simple and avoids mixed-runtime warnings.
+
+5. **Let Meta’s “Project Validation” auto-fix**
+
+* ⬜ **Edit → Project Settings → XR Plug-in Management → Project Validation → Fix All**
+
+  * • Applies recommended flags (permissions, input backends, etc.).
+
+6. **URP asset tuning** *(Project: select your **Mobile_RPAsset**)*
+
+* ⬜ **HDR = OFF**
+* ⬜ **MSAA = 4x**
+* ⬜ **Shadows: 512 (Medium), Distance 20–25m, Cascades = 2**
+* ⬜ **Disable** Bloom / Motion Blur / Vignette
+
+  * • Solid 72–90 FPS baseline on Quest.
+
+7. **URP renderer tuning** *(select **Mobile_Renderer**)*
+
+* ⬜ **Post-processing = OFF**
+* ⬜ **Transparent Receive Shadows = OFF**
+* ⬜ **Renderer Features = (empty)**
+
+  * • Removes heavy passes that hurt mobile VR.
+
+8. **Meta runtime tuning** *(Meta XR provider / OVRManager)*
+
+* ⬜ **Stereo = Single-Pass Instanced**
+
+  * • Renders both eyes in one pass (large GPU win).
+* ⬜ **Foveated Rendering = Enabled (Low/Medium)** *(optional)*
+
+  * • Big perf gain; watch peripheral blur.
+* ⬜ **Phase Sync / ASW** *(optional)*
+
+  * • Smooth frame pacing; test with your content.
+
+9. **Silence common OVR warnings** *(optional)*
+
+* ⬜ If you see micro-gesture logs → **disable Microgestures** (or update SDK 65+)
+
+  * • “ActionSet not attached” warnings are harmless but noisy if unused.
+
+---
 
 ---
 
