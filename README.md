@@ -122,7 +122,7 @@ Add movement to the player rig using Meta’s modern Interaction/Movement stack:
 
 2. **Add CharacterController**
 
-* Select **Player** (or **OVRCameraRig** if you’re skipping a parent) → **Add Component → Character Controller**
+* Select **Player** (or **OVRCameraRig** if you’re skipping a parent) → **Add Component → OVR Player Controller**
 
   * **Radius = 0.10**, **Height = 1.50**, **Center.Y = 0.75** *(must be Height ÷ 2 to sit on the floor)*.
 
